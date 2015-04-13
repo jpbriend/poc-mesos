@@ -1,0 +1,54 @@
+---
+- hosts: web
+  vars:
+    zookeeper_server1_ip: 172.31.44.31
+    zookeeper_server2_ip: 172.31.44.32
+    zookeeper_server3_ip: 172.31.44.33
+  sudo: yes
+  user: ubuntu
+  tasks:
+    - name: Add Mesosphere key
+      apt_key: keyserver=keyserver.ubuntu.com id=E56151BF
+    - name: Setup Mesosphere repository
+      sudo: true
+      shell: echo "deb http://repos.mesosphere.io/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/mesosphere.list
+    - name: Update Ubuntu packages and install mesosphere package
+      apt: update_cache=yes name=mesosphere
+    - name: Stop Zookeeper service
+      service: name=zookeeper state=stopped
+    - name: Stop Mesos Master service
+      service: name=mesos-master state=stopped
+    - name: Stop Marathon service
+      service: name=marathon state=stopped
+    - name: Stop Mesos Slave service
+      service: name=mesos-slave state=stopped
+    - name: Clean logs
+      file: path=/var/log/mesos/ state=absent
+    - name: Update Mesos' zookeeper configuration file
+      template: src=templates/zookeeper/zk.j2 dest=/etc/mesos/zk owner=root group=root
+    - name: Update Zookeeper's myid file
+      template: src=templates/zookeeper/myid.j2 dest=/etc/zookeeper/conf/myid owner=root group=root
+    - name: Update Zookeeper's configuration file
+      template: src=templates/zookeeper/zoo.cfg.j2 dest=/etc/zookeeper/conf/zoo.cfg owner=root group=root
+    - name: Update Mesos' quorum
+      template: src=templates/mesos/quorum.j2 dest=/etc/mesos-master/quorum owner=root group=root
+    - name: Configure hostname and IP address for Mesos
+      template: src=templates/mesos/ip.j2 dest=/etc/mesos-master/hostname owner=root group=root
+      template: src=templates/mesos/ip.j2 dest=/etc/mesos-master/ip owner=root group=root
+    - name: Create Marathon's configuration directory
+      command: sudo mkdir -p /etc/marathon/conf
+    - name: Copy Marathon's configuration file
+      template: src=templates/mesos/ip.j2 dest=/etc/marathon/conf/hostname owner=root group=root
+    - name: Install Marathon's zookeeper's configuration file because Marathon uses the same Zookeeper instance as Mesos
+      template: src=templates/zookeeper/zk.j2 dest=/etc/marathon/conf/master owner=root group=root
+    - name: Configure Marathon's own zk configuration
+      template: src=templates/marathon/zk.j2 dest=/etc/marathon/conf/zk owner=root group=root
+    - name: Configure hostname and IP address for Mesos' slaves
+      template: src=templates/mesos/ip.j2 dest=/etc/mesos-slave/hostname owner=root group=root
+      template: src=templates/mesos/ip.j2 dest=/etc/mesos-slave/ip owner=root group=root
+    - name: Restart Zookeeper service
+      service: name=zookeeper state=started
+    - name: Restart Mesos Master service
+      service: name=mesos-master state=started
+
+
