@@ -1,0 +1,21 @@
+---
+- hosts: web
+  vars:
+    zookeeper_server1_ip: 52.17.65.27
+    zookeeper_server2_ip: 52.17.125.76
+    zookeeper_server3_ip: 52.17.20.200
+    consul_version: 0.5.0
+    consul_is_ui: true
+    consul_is_server: "true"
+    consul_datacenter: "test"
+    consul_node_name: "node_{{ server_id }}"
+    consul_bind_address: "0.0.0.0"
+    consul_bootstrap: "{{ is_consul_bootstrap }}"
+    consul_client_address: "0.0.0.0"
+  sudo: yes
+  user: ubuntu
+  roles:
+    - ansible-consul
+  tasks:
+    - name: Restart Consul service
+      service: name=consul state=restarted

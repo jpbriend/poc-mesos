@@ -1,11 +1,11 @@
 ---
 - hosts: web
   vars:
-    zookeeper_server1_ip: 52.16.235.242
+    zookeeper_server1_ip: 52.17.65.27
     zookeeper_server1_internal_ip: 172.31.44.31
-    zookeeper_server2_ip: 52.16.189.247
+    zookeeper_server2_ip: 52.17.125.76
     zookeeper_server2_internal_ip: 172.31.44.32
-    zookeeper_server3_ip: 52.16.132.153
+    zookeeper_server3_ip: 52.17.20.200
     zookeeper_server3_internal_ip: 172.31.44.33
   sudo: yes
   user: ubuntu
@@ -20,16 +20,14 @@
       with_items:
       - mesosphere
       - python-httplib2
-    - name: Stop Zookeeper service
-      service: name=zookeeper state=stopped
-    - name: Stop Mesos Slave service
-      service: name=mesos-slave state=stopped
-    - name: Stop Mesos Master service
-      service: name=mesos-master state=stopped
     - name: Stop Marathon service
       service: name=marathon state=stopped
     - name: Stop Mesos Slave service
       service: name=mesos-slave state=stopped
+    - name: Stop Mesos Master service
+      service: name=mesos-master state=stopped
+    - name: Stop Zookeeper service
+      service: name=zookeeper state=stopped
     - name: Clean Zookeeper logs
       file: path=/var/log/zookeeper/* state=absent
     - name: Clean Mesos logs
@@ -61,6 +59,10 @@
       template: src=templates/mesos/hostname.j2 dest=/etc/mesos-slave/hostname owner=root group=root
     - name: Configure IP address for Mesos' slaves
       template: src=templates/mesos/ip.j2 dest=/etc/mesos-slave/ip owner=root group=root
+    - name: Configure Mesos Slave to use Docker
+      shell: echo 'docker,mesos' > /etc/mesos-slave/containerizers
+    - name: Increase Mesos Slave timeout to pull docker images
+      shell: echo '5mins' > /etc/mesos-slave/executor_registration_timeout
     - name: Restart Zookeeper service
       service: name=zookeeper state=started
     - name: Restart Mesos Master service
